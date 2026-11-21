@@ -5,11 +5,12 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Mail, Lock, User as UserIcon, Image as ImageIcon, UserPlus, ArrowRight, HeartHandshake, Eye, EyeOff, Check, X } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { GoogleLogin } from '@react-oauth/google';
 import { useAuth } from '../../context/AuthContext';
 
 export default function RegisterPage() {
   const router = useRouter();
-  const { register } = useAuth();
+  const { register, handleGoogleCredential } = useAuth();
 
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -81,6 +82,37 @@ export default function RegisterPage() {
           <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
             Create an account to organize relief drives and register for local initiatives.
           </p>
+        </div>
+
+        {/* Real Google Signup/Login */}
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-full flex justify-center py-1">
+            <GoogleLogin
+              onSuccess={async (credentialResponse) => {
+                if (credentialResponse.credential) {
+                  const ok = await handleGoogleCredential(credentialResponse.credential);
+                  if (ok) router.push('/events');
+                }
+              }}
+              onError={() => {
+                toast.error('Google Sign In was cancelled or failed.');
+              }}
+              theme="outline"
+              size="large"
+              shape="pill"
+              text="signup_with"
+              width="320"
+            />
+          </div>
+
+          <div className="relative my-4 w-full text-center">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-gray-200 dark:border-gray-800" />
+            </div>
+            <span className="relative bg-white dark:bg-gray-900 px-3 text-xs uppercase tracking-wider text-gray-400">
+              Or register with email
+            </span>
+          </div>
         </div>
 
         {/* Registration Form */}

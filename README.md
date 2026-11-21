@@ -7,8 +7,8 @@
 
 **CareWave** is a community-driven social service event management platform where active citizens, youth groups, and humanitarian organizers can create, discover, join, and track impactful grassroots social initiatives in their local neighborhoods.
 
-🌐 **Live Website Link**: [https://client-ruddy-eta-13.vercel.app](https://client-ruddy-eta-13.vercel.app)
-📡 **Live Backend API**: [https://server-one-sigma-32.vercel.app](https://server-one-sigma-32.vercel.app)
+🌐 **Live Website Link**: [https://carewave21.vercel.app](https://carewave21.vercel.app)
+📡 **Live Backend API**: [https://server-one-sigma-32.vercel.app/api](https://server-one-sigma-32.vercel.app/api)
 
 ---
 

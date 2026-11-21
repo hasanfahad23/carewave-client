@@ -3,8 +3,11 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import Swal from 'sweetalert2';
+import { GoogleOAuthProvider } from '@react-oauth/google';
 import { User } from '../types';
 import { apiRequest, getAuthToken, setAuthToken } from '../lib/api';
+
+const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '472203862027-hclj7agnkb8smosbmt6cm83hetkc75tu.apps.googleusercontent.com';
 
 interface AuthContextType {
   user: User | null;
@@ -12,6 +15,7 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<boolean>;
   register: (name: string, email: string, photoURL: string, password: string) => Promise<boolean>;
   googleLogin: () => Promise<boolean>;
+  handleGoogleCredential: (credential: string) => Promise<boolean>;
   updateProfile: (name: string, photoURL: string) => Promise<boolean>;
   logout: () => void;
 }
@@ -153,6 +157,45 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const handleGoogleCredential = async (credential: string): Promise<boolean> => {
+    try {
+      // Decode JWT token payload safely without external dependencies
+      const base64Url = credential.split('.')[1];
+      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+      const jsonPayload = decodeURIComponent(
+        atob(base64)
+          .split('')
+          .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+          .join('')
+      );
+      const payload = JSON.parse(jsonPayload);
+
+      const email = payload.email;
+      const name = payload.name || (email ? email.split('@')[0] : 'Volunteer');
+      const photoURL = payload.picture || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(name)}`;
+
+      const res = await apiRequest('/auth/google', {
+        method: 'POST',
+        body: JSON.stringify({ name, email, photoURL }),
+      });
+
+      if (res.success && res.token && res.user) {
+        setAuthToken(res.token);
+        setUser(res.user);
+        localStorage.setItem('carewave_user', JSON.stringify(res.user));
+        toast.success(res.message || 'Logged in with Google successfully!');
+        return true;
+      } else {
+        toast.error(res.message || 'Google authentication failed.');
+        return false;
+      }
+    } catch (err: any) {
+      console.error('Google credential parse error:', err);
+      toast.error('Failed to authenticate with Google.');
+      return false;
+    }
+  };
+
   const updateProfile = async (name: string, photoURL: string): Promise<boolean> => {
     try {
       const res = await apiRequest('/auth/profile', {
@@ -183,9 +226,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, googleLogin, updateProfile, logout }}>
-      {children}
-    </AuthContext.Provider>
+    <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
+      <AuthContext.Provider value={{ user, loading, login, register, googleLogin, handleGoogleCredential, updateProfile, logout }}>
+        {children}
+      </AuthContext.Provider>
+    </GoogleOAuthProvider>
   );
 };
 
